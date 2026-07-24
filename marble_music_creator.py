@@ -13,7 +13,7 @@ from math import radians
 from mathutils import Vector
 import numpy as np
 
-# パネルクラス
+# 面板类
 class PREFAB_PT_panel(bpy.types.Panel):
     bl_label = "Marble Music Creator"
     bl_idname = "MMC_PT_panel"
@@ -25,14 +25,14 @@ class PREFAB_PT_panel(bpy.types.Panel):
         layout = self.layout
         scene = context.scene
         
-        # ターゲットオブジェクトとプレファブオブジェクトの選択
+        # 目标对象与预制件对象的选择
         layout.prop(scene, "target_object")
         layout.prop(scene, "prefab_object")
         layout.prop(scene, "collection_of_instance")
         layout.prop(scene, "position_offset")
         layout.prop(scene, "random_rotation_angle")
         
-        # 配置ボタン
+        # 放置按钮
         layout.operator("object.duplicate_prefab")
 
 @bpy.app.handlers.persistent
@@ -52,7 +52,7 @@ def get_target_velocity(scene):
         print(target_object_velocity)
 
 
-# オペレータークラス
+# 操作符类
 class PREFAB_OT_duplicate(bpy.types.Operator):
     bl_label = "Duplicate Prefab"
     bl_idname = "object.duplicate_prefab"
@@ -68,13 +68,13 @@ class PREFAB_OT_duplicate(bpy.types.Operator):
         new_prefab = None
 
         if not target_object or not prefab_object:
-            self.report({'WARNING'}, "ターゲットオブジェクトとプレファブオブジェクトを選択してください")
+            self.report({'WARNING'}, "请选择目标对象和预制件对象")
             return {'CANCELLED'}
 
-        # ターゲットオブジェクトの移動量ベクトルの計算
+        # 计算目标对象的移动量向量
         move_vector = target_object_velocity.normalized()
 
-        # 配置位置の計算
+        # 计算放置位置
         position = target_object_current_position
 
         current_length = np.linalg.norm(move_vector)
@@ -83,19 +83,19 @@ class PREFAB_OT_duplicate(bpy.types.Operator):
 
         new_location = position + offset_vector
 
-        # プレファブの複製と配置
-        bpy.ops.object.select_all(action='DESELECT')  # 全てのオブジェクトの選択を解除
+        # 预制件的复制与放置
+        bpy.ops.object.select_all(action='DESELECT')  # 取消所有对象的选择
         prefab_object.select_set(True)
         bpy.context.view_layer.objects.active = prefab_object
 
-        # 子オブジェクトを選択する
+        # 选择子对象
         for child in prefab_object.children:
             child.select_set(True)
-        
-        # 複製する
+
+        # 复制
         bpy.ops.object.duplicate()
 
-        # コレクションを変更
+        # 更改集合
         if collection_of_instance is not None:
             for selected in bpy.context.selected_objects:
                 collections = selected.users_collection
@@ -104,7 +104,7 @@ class PREFAB_OT_duplicate(bpy.types.Operator):
                         collection.objects.unlink(selected)
                 collection_of_instance.objects.link(selected)
 
-        # 複製されたオブジェクトを取得
+        # 获取复制后的对象
         for selected in bpy.context.selected_objects:
             if selected.type == "EMPTY":
                 new_prefab = selected
@@ -114,7 +114,7 @@ class PREFAB_OT_duplicate(bpy.types.Operator):
 
         new_prefab.location = new_location
 
-        # プレファブオブジェクトの回転設定
+        # 预制件对象的旋转设置
         move_vector_angle = self.calc_vector_angle(Vector((0, 0, 1)), move_vector)
         if position.x - new_location.x > 0:
             move_vector_angle = -move_vector_angle
@@ -130,34 +130,34 @@ class PREFAB_OT_duplicate(bpy.types.Operator):
         theta = np.arccos(cos_theta)
         return theta
 
-# プロパティの登録
+# 注册属性
 def register():
     bpy.utils.register_class(PREFAB_PT_panel)
     bpy.utils.register_class(PREFAB_OT_duplicate)
     bpy.types.Scene.target_object = bpy.props.PointerProperty(
         name="Target Object",
         type=bpy.types.Object,
-        description="ターゲットオブジェクトを選択してください"
+        description="请选择目标对象"
     )
     bpy.types.Scene.prefab_object = bpy.props.PointerProperty(
         name="Prefab Object",
         type=bpy.types.Object,
-        description="プレファブオブジェクトを選択してください"
+        description="请选择预制件对象"
     )
     bpy.types.Scene.collection_of_instance = bpy.props.PointerProperty(
         name="Collection of Instance",
         type=bpy.types.Collection,
-        description="複製したオブジェクトを格納するコレクション"
+        description="存储复制对象的集合"
     )
     bpy.types.Scene.position_offset = bpy.props.FloatProperty(
         name="Position Offset",
         default=0.3,
-        description="ターゲットオブジェクトからのオフセット距離"
+        description="距离目标对象的偏移距离"
     )
     bpy.types.Scene.random_rotation_angle = bpy.props.FloatProperty(
         name="Random Rotation Angle",
         default=30.0,
-        description="プレファブオブジェクトのY軸回転角度"
+        description="预制件对象的Y轴旋转角度"
     )
 
     bpy.app.handlers.frame_change_post.append(get_target_velocity)
